@@ -5,19 +5,19 @@ import (
 
 	"encoding/binary"
 
-	"github.com/dsoprea/go-logging"
+	log "github.com/dsoprea/go-logging"
 
-	"github.com/dsoprea/go-exif/v3/common"
+	exifcommon "github.com/dsoprea/go-exif/v3/common"
 )
 
-type TagExifA300FileSource uint32
+type TagExifA300FileSource uint8
 
 func (TagExifA300FileSource) EncoderName() string {
 	return "CodecExifA300FileSource"
 }
 
 func (af TagExifA300FileSource) String() string {
-	return fmt.Sprintf("0x%08x", uint32(af))
+	return fmt.Sprintf("0x%02x", uint8(af))
 }
 
 const (
@@ -44,10 +44,11 @@ func (CodecExifA300FileSource) Encode(value interface{}, byteOrder binary.ByteOr
 
 	ve := exifcommon.NewValueEncoder(byteOrder)
 
-	ed, err := ve.Encode([]uint32{uint32(st)})
+	ed, err := ve.Encode([]uint8{uint8(st)})
 	log.PanicIf(err)
 
 	// TODO(dustin): Confirm this size against the specification. It's non-specific about what type it is, but it looks to be no more than a single integer scalar. So, we're assuming it's a LONG.
+	// nah... it's a byte
 
 	return ed.Encoded, 1, nil
 }
@@ -59,12 +60,12 @@ func (CodecExifA300FileSource) Decode(valueContext *exifcommon.ValueContext) (va
 		}
 	}()
 
-	valueContext.SetUndefinedValueType(exifcommon.TypeLong)
+	valueContext.SetUndefinedValueType(exifcommon.TypeByte)
 
-	valueLongs, err := valueContext.ReadLongs()
+	b, err := valueContext.ReadBytes()
 	log.PanicIf(err)
 
-	return TagExifA300FileSource(valueLongs[0]), nil
+	return TagExifA300FileSource(b[0]), nil
 }
 
 func init() {
